@@ -16,6 +16,12 @@ git commit -m "Description de tes changements ici" : Le -m permet d'ajouter une 
 git push origin master  : Tu met en ligne tes modifs. Avant cette étape tes modifications restent en local. 
 
 
+======== Pour changer de branche ========
+
+git checkout nom_branche
+
+=========================================
+
 EN CAS DE MERGE:
 
 Hurlez !
