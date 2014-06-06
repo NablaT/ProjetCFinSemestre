@@ -22,9 +22,20 @@ git checkout nom_branche
 
 =========================================
 
+======== Pour afficher les branches =====
+
+git branch -a
+
+=========================================
+
 EN CAS DE MERGE:
 
 Hurlez !
 
 Ou appelez nous.
+
+--> SOLUTION! ===
+	--> sudo apt-get install meld
+	--> En cas de merge conflict :
+		git mergetool
 
