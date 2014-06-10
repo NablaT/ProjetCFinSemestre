@@ -70,9 +70,7 @@ void load_program(Machine *pmach,
  * \param programfile le nom du fichier binaire
  *
  */
-
 void read_program(Machine *pmach, const char *programfile){
-
   unsigned int textsize, datasize, dataend; 
   int cpt_bits_read;
 
@@ -150,6 +148,10 @@ void print_cpu(Machine *pmach){
 }
 
 void simul(Machine *pmach, bool debug){
+
 }
 
+
+}
+>>>>>>> 06241e2814818c8953ae02ce01eefcbdc5cc218c
 
