@@ -69,7 +69,56 @@ void load_program(Machine *pmach,
  * \param programfile le nom du fichier binaire
  *
  */
-void read_program(Machine *mach, const char *programfile){
+void read_program(Machine *pmach, const char *programfile){
+  int bits_read;
+  unsigned textsize;
+  unsigned datasize;
+  unsigned dataend;
+  //Ouverture du fichier :
+  int handle = open(programfile,O_RDONLY);
+  
+  if( handle < 0 ){
+    fprintf(stderr, "Erreur d'ouverture un program dans <machine.c:read_program>.\n");
+    exit(1);
+  }
+
+  if( (bits_read = read(handle, &textsize, sizeof(pmach -> _textsize) ) ) != sizeof(pmach->_textsize) ){
+    fprintf(stderr, "Erreur de lecture de 'textsize' dans <machine.c:read_program> dans '%s': %d bits lus au lieu de %ld.\n", programfile, bits_read, sizeof(textsize));
+    exit(1);
+  }
+
+  if( (bits_read = read(handle, &datasize, sizeof(pmach -> _datasize) ) ) != sizeof(pmach->_datasize) ){
+    fprintf(stderr, "Erreur de lecture de 'datasize' dans <machine.c:read_program> dans '%s': %d bits lus au lieu de %ld.\n", programfile, bits_read, sizeof(datasize));
+    exit(1);
+  }
+
+  if( (bits_read = read(handle, &dataend, sizeof(pmach -> _dataend) ) ) != sizeof(pmach->_dataend) ){
+    fprintf(stderr, "Erreur de lecture de 'dataend' dans <machine.c:read_program> dans '%s': %d bits lus au lieu de %ld.\n", programfile, bits_read, sizeof(dataend) );
+    exit(1);
+  }
+
+  Instruction *text = malloc( textsize * sizeof(Instruction) );
+  //lecture des instructions :
+  if( (bits_read = read( handle, text, textsize * sizeof(Instruction) ) ) != ( textsize * sizeof(Instruction) ) ) {
+    fprintf(stderr, "Erreur de lecture de 'text' dans <machine.c:read_program> '%s': %d bits lus au lieu de %ld.\n",programfile,bits_read,textsize * sizeof(Instruction));
+    exit(1);
+  }
+
+  Word *data = malloc(datasize * sizeof(Word));
+  //lecture des données :
+  if( (bits_read = read(handle, data, datasize * sizeof(Word))) != (datasize * sizeof(Word))) {
+    fprintf(stderr, "Erreur de lecture de 'data' dans <machine.c:read_program> '%s': %d bits lus au lieu de %ld.\n",programfile,bits_read,datasize * sizeof(Word));
+    exit(1);
+  }
+
+  //Fermeture du fichier :
+  if( close(handle) != 0 ) {
+    fprintf(stderr, "Erreur de fermeture du fichier binaire dans <machine.c:read_program>.\n");
+    exit(1);
+  }
+
+  //On charge le programme dans la machine :
+  load_program(pmach, textsize, text, datasize, data, dataend);
 
 }
 
@@ -91,5 +140,5 @@ void print_cpu(Machine *pmach){
 
 void simul(Machine *pmach, bool debug){
 
-
+}
 
