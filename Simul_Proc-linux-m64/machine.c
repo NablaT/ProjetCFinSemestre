@@ -151,7 +151,3 @@ void simul(Machine *pmach, bool debug){
 
 }
 
-
-}
->>>>>>> 06241e2814818c8953ae02ce01eefcbdc5cc218c
-
