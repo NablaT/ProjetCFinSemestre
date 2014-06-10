@@ -40,9 +40,7 @@ void load_program(Machine *pmach,
 
   //Initialisation de datasize et dataend
   pmach->_datasize=datasize; 
-  
   pmach->_dataend=dataend; 
-
   //Init de SP ;
   pmach->_sp = datasize-1;
 
@@ -70,6 +68,7 @@ void load_program(Machine *pmach,
  * \param programfile le nom du fichier binaire
  *
  */
+
 void read_program(Machine *pmach, const char *programfile){
   unsigned int textsize, datasize, dataend; 
   int cpt_bits_read;
@@ -84,41 +83,21 @@ void read_program(Machine *pmach, const char *programfile){
 
   //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmatch alors on renvoie une erreur.
   cpt_bits_read = read(opening, &dataend, sizeof(pmach->_dataend));
-  if( cpt_bits_read != sizeof(pmach->_dataend)) {
-    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'dataend' : %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,sizeof(dataend));
-    exit(1);
-  }
   
   //Verification du nombre de bits lus pour datasize. 
   cpt_bits_read = read(opening, &datasize, sizeof(pmach->_datasize));
-  if(cpt_bits_read != sizeof(pmach->_datasize)) {
-    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'datasize': %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,sizeof(datasize));
-    exit(1);
-  }
   
   //Verification du nombre de bits lus pour textsize.
   cpt_bits_read = read(opening, &textsize, sizeof(pmach->_textsize));
-  if(cpt_bits_read != sizeof(pmach->_textsize)) {
-    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'textsize' : %d bits lus au lieu de %ld\n", programfile,cpt_bits_read, sizeof(textsize));
-    exit(1);
-  }
-  
+
   //On lit les instructions:
   Instruction *instruction=malloc(textsize * sizeof(Instruction));
   cpt_bits_read = read(opening, instruction, textsize*sizeof(Instruction));
-  if(cpt_bits_read!=sizeof(textsize *sizeof(Instruction))){
-      fprintf(stderr, "Fichier: %s. Erreur de lecture de 'text' : %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,textsize * sizeof(Instruction));
-    exit(1);
-  }
   
   //On lit les données: 
   Word *data = malloc(datasize * sizeof(Word));
   cpt_bits_read = read(opening, data, datasize*sizeof(Word));
-  if(cpt_bits_read != (datasize * sizeof(Word))) {
-    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'data': %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,datasize * sizeof(Word));
-    exit(1);
-  }
-  
+
   //On ferme le fichier et on verifie que la fermeture s'est bien deroulée.
   int file_close=close(opening); 
   if(file_close!=0){
@@ -143,17 +122,71 @@ void print_data(Machine *pmach){
 
 }
 
-void print_cpu(Machine *pmach){
+/*
+  Fonction put_cc. Cette fonction prend en parametre un code condition et renvoie la lettre correspondante.
+  Pour CC_U => U
+  Pour CC_Z => Z
+  Pour CC_P => P
+  Pour CC_N => N
+ */
 
+char put_cc(Condition_Code cc){
+  switch(cc){
+  case CC_U: 
+    return 'U';
+  case CC_Z:
+    return 'Z'; 
+  case CC_P: 
+    return 'P';
+  case CC_N: 
+    return 'N';
+  }
+  return NULL; 
+}
+
+/* Fonction print_registers. Cette fonction affiche tous les registres avec leur adresse et leur valeur.
+ */
+void print_registers(Machine *pmach){
+  for(int i = 0 ; i < NREGISTERS ; i++){
+    printf("R%02d: 0x%08x\t%d\t", i, pmach->_registers[i], pmach->_registers[i]);
+    if (i % 3 == 2){
+      putchar('\n');
+    }
+  }
+}
+
+//! Affichage des registres du CPU
+/*!
+ * Les registres généraux sont affichées en format hexadécimal et décimal.
+ *
+ * \param pmach la machine en cours d'exécution
+ */
+void print_cpu(Machine *pmach){
+  
+  printf("\n*** CPU ***\n");
+  printf("PC:  0x%08x\tCC: ",pmach->_pc); //On affiche l'adresse de PC
+  //On appelle la fonction put_cc qui renvoie le caractere à afficher en fonction du code condition de la machine courante.
+  char char_to_put=put_cc(pmach->_cc);
+  putchar(char_to_put);
+  putchar('\n');
+  putchar('\n');
+  //Appelle de la fonction print_registers qui affiche les registres avec leur adresse et leur valeur
+  print_registers(pmach);
+  putchar('\n');
 }
 
 void simul(Machine *pmach, bool debug){
   bool stop=true; 
   while(stop){
     //On appelle la fonction trace qui se trouve dans exec.c. On lui donne en parametre le message à afficher, la machine qui est en cours d'execution (pmach), l'instruction en cours et l'adresse de l'instruction grâce à pc. 
+
+    ///////// A ENLEVER APRES RECUPERATION D'EXEC DE TOM ////////////////////////:
     trace("Execution",pmach,pmach->_text[pmach->_pc],pmach->_pc);
+
+    /////////////////////////////////////////////////////////////////
     if(pmach->_pc<pmach->_textsize){
-      stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1.
+      
+      stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1. Cette fonction renvoie faux lorsque l'instruction a decoder est HALT qui marque la fin.
       if(debug){
 	debug=debug_ask(pmach);////////////////////////////// A RAJOUTER//////////////
       }
@@ -161,7 +194,5 @@ void simul(Machine *pmach, bool debug){
     else{
       error(ERR_SEGTEXT,pmach->_pc - 1); //On précise l'erreur rencontré: ERR_SEGTEXT qui correspond à la violation de la taille du segment de text ainsi que l'adresse à laquelle se trouve l'erreur, cette adresse se trouve à pc-1.
     }
- 
   }
 }
-
