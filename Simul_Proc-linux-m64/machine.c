@@ -71,7 +71,6 @@ void load_program(Machine *pmach,
 
 void read_program(Machine *pmach, const char *programfile){
   unsigned int textsize, datasize, dataend; 
-  int cpt_bits_read;
 
   int opening= open(programfile,O_RDONLY);
 
@@ -81,22 +80,22 @@ void read_program(Machine *pmach, const char *programfile){
     exit(1);
   }
 
-  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmatch alors on renvoie une erreur.
-  cpt_bits_read = read(opening, &dataend, sizeof(pmach->_dataend));
+  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
+  read(opening, &dataend, 32);//sizeof 32
   
   //Verification du nombre de bits lus pour datasize. 
-  cpt_bits_read = read(opening, &datasize, sizeof(pmach->_datasize));
+  read(opening, &datasize, 32);
   
   //Verification du nombre de bits lus pour textsize.
-  cpt_bits_read = read(opening, &textsize, sizeof(pmach->_textsize));
+  read(opening, &textsize, 32);
 
   //On lit les instructions:
   Instruction *instruction=malloc(textsize * sizeof(Instruction));
-  cpt_bits_read = read(opening, instruction, textsize*sizeof(Instruction));
+  read(opening, instruction, textsize*sizeof(Instruction));
   
   //On lit les données: 
   Word *data = malloc(datasize * sizeof(Word));
-  cpt_bits_read = read(opening, data, datasize*sizeof(Word));
+  read(opening, data, datasize*sizeof(Word));
 
   //On ferme le fichier et on verifie que la fermeture s'est bien deroulée.
   int file_close=close(opening); 
@@ -107,10 +106,10 @@ void read_program(Machine *pmach, const char *programfile){
   
   //On charge ensuite le programme à l'intérieur de la machine
   load_program(pmach, textsize,instruction,datasize,data,dataend); 
-  
 }
 
 void dump_memory(Machine *pmach){
+
 
 }
 
