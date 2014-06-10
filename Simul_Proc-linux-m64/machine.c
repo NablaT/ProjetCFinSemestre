@@ -71,4 +71,39 @@ void load_program(Machine *pmach,
  */
 void read_program(Machine *mach, const char *programfile){
 
+  unsigned int textsize, datasize, dataend; 
+  int cpt_bits_read;
+
+  int opening= open(programfile,O_RDONLY);
+
+  //Verifications avant la lecture par rapport aux champs de pmach.
+  if(opening<0){
+    fprint(stderr, "Erreur lors de l'ouverture du fichier\n");
+    exit(1);
+  }
+
+  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmatch alors on renvoie une erreur.
+  cpt_bits_read = read(handle, &dataend, sizeof(pmach->_dataend));
+  if( cpt_bits_read != sizeof(pmach->_dataend)) {
+    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'dataend' : %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,sizeof(dataend));
+    exit(1);
+  }
+  
+  //Verification du nombre de bits lus pour datasize. 
+  cpt_bits_read = read(handle, &datasize, sizeof(pmach->_datasize));
+  if(cpt_bits_read != sizeof(pmach->_datasize)) {
+    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'datasize': %d bits lus au lieu de %ld\n",programfile,cpt_bits_read,sizeof(datasize));
+    exit(1);
+  }
+  
+  //Verification du nombre de bits lus pour textsize.
+  cpt_bits_read = read(handle, &textsize, sizeof(pmach->_textsize));
+  if(cpt_bits_read != sizeof(pmach->_textsize)) {
+    fprintf(stderr, "Fichier: %s. Erreur de lecture de 'textsize' : %d bits lus au lieu de %ld\n", programfile,cpt_bits_read, sizeof(textsize));
+    exit(1);
+  }
+
+  aea
+  
+  
 }
