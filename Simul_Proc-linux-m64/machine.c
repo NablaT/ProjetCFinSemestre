@@ -1,3 +1,4 @@
+/***** machine.c *****/
 #include "machine.h"
 #include "exec.h"
 #include "debug.h"
@@ -9,7 +10,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-
 
 
 //! Chargement d'un programme
@@ -107,3 +107,24 @@ void read_program(Machine *mach, const char *programfile){
   
   
 }
+
+void dump_memory(Machine *pmach){
+
+}
+
+void print_program(Machine *pmach){
+
+}
+
+void print_data(Machine *pmach){
+
+}
+
+void print_cpu(Machine *pmach){
+
+}
+
+void simul(Machine *pmach, bool debug){
+
+
+
