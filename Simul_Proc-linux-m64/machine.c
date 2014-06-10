@@ -148,6 +148,20 @@ void print_cpu(Machine *pmach){
 }
 
 void simul(Machine *pmach, bool debug){
-
+  bool stop=true; 
+  while(stop){
+    //On appelle la fonction trace qui se trouve dans exec.c. On lui donne en parametre le message à afficher, la machine qui est en cours d'execution (pmach), l'instruction en cours et l'adresse de l'instruction grâce à pc. 
+    trace("Execution",pmach,pmach->_text[pmach->_pc],pmach->_pc);
+    if(pmach->_pc<pmach->_textsize){
+      stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1.
+      if(debug){
+	debug=debug_ask(pmach);////////////////////////////// A RAJOUTER//////////////
+      }
+    }
+    else{
+      error(ERR_SEGTEXT,pmach->_pc - 1); //On précise l'erreur rencontré: ERR_SEGTEXT qui correspond à la violation de la taille du segment de text ainsi que l'adresse à laquelle se trouve l'erreur, cette adresse se trouve à pc-1.
+    }
+ 
+  }
 }
 
