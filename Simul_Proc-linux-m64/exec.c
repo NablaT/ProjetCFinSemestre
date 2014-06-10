@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "machine.h"
+#include "error.h"
 
 int i = 0;
 
@@ -47,12 +48,10 @@ void trace(const char *msg, Machine *pmach, Instruction instr, unsigned addr);
  * \return faux après l'exécution de \c HALT ; vrai sinon
  */
 bool decode_execute(Machine *pmach, Instruction instr) {
+	int pc = pmach->_pc - 1;
 	// Brace yourselves !
-	//printf("0x%x : %s\n", pmach->_pc -1 , code_op_name(instr.instr_generic._cop));
-	trace("Execution", pmach, instr, pmach->_pc);
-	//printf("reg[2]=%d\n", pmach->_registers[2]);
 	switch (instr.instr_generic._cop) {
-		case ILLOP: return false; // arret intempestif
+		case ILLOP: error(ERR_ILLEGAL, pc); // arret intempestif
 		case NOP: break;
 
 		case LOAD: process_load(pmach, instr); break;
@@ -65,11 +64,11 @@ bool decode_execute(Machine *pmach, Instruction instr) {
 		case RET: process_ret(pmach, instr); break;
 		case PUSH: process_push(pmach, instr); break;
 		case POP: process_pop(pmach, instr); break;
+
+		case HALT: return false;
 		
-		default: return false;
+		default: error(ERR_UNKNOWN, pc);
 	}
-	//pmach->_registers[2] = i;
-	//if (++i == 10) return false;
 	return true;
 }
 
@@ -93,44 +92,56 @@ void trace(const char *msg, Machine *pmach, Instruction instr, unsigned addr) {
  * 
  */
 
+void stack_validation(Machine *pmach) {
+	// Check the stack index
+	if (pmach->_sp >= pmach->_datasize || pmach->_sp < pmach->_dataend) {
+		//printf("%d , size=%d, end=%d", pmach->_sp, pmach-->_sp, pm);
+		error(ERR_SEGSTACK, pmach->_pc-1);
+	}
+}
+
 void stack_data(Machine *pmach, int data) {
-	printf("\n==> Stacking value %d to %x\n", data, pmach->_sp);
+	//printf("\n==> Stacking value %d to %x\n", data, pmach->_sp);
 	pmach->_data[(pmach->_sp)--] = data;
+	stack_validation(pmach);
 }
 
 int pop_data(Machine *pmach) {
-	return pmach->_data[++(pmach->_sp)];
+	int data = pmach->_data[++(pmach->_sp)];
+	stack_validation(pmach);
+	return data;
 }
 
 bool check_condition(Machine *pmach, Instruction instr) {
-	if (instr.instr_generic._regcond == NC) return true;
-	printf("|Checking condition : %d => %d", instr.instr_generic._regcond, pmach->_cc);
-	if (instr.instr_generic._regcond == EQ && pmach->_cc == CC_Z) return true;
-	// TODO : voir si la valeur inconnue retourne true ?
-	if (instr.instr_generic._regcond == NE && pmach->_cc != CC_Z) return true;
+	switch (instr.instr_generic._regcond) {
+		case NC: return true;
 
-	if (instr.instr_generic._regcond == GT && pmach->_cc == CC_P) return true;
-	if (instr.instr_generic._regcond == GE && pmach->_cc != CC_N) return true;
+		case EQ: return pmach->_cc == CC_Z;
+		case NE: return pmach->_cc != CC_Z;
 
-	if (instr.instr_generic._regcond == LT && pmach->_cc == CC_N) return true;
-	if (instr.instr_generic._regcond == LE && pmach->_cc != CC_P) return true;
+		case GT: return pmach->_cc == CC_P;
+		case GE: return pmach->_cc != CC_N;
 
+		case LT: return pmach->_cc == CC_N;
+		case LE: return pmach->_cc != CC_P;
+		default: error(ERR_CONDITION, pmach->_pc-1);
+	}
 	return false;
 }
 
 void update_cc(Machine *pmach, int value) {
-	printf("\n\t|Updating CC with %d: ", value);
+	//printf("\n\t|Updating CC with %d: ", value);
 	if (value == 0) 	pmach->_cc = CC_Z;
 	else if (value < 0) pmach->_cc = CC_N;
 	else if (value > 0) pmach->_cc = CC_P;
-	printf("%d |", pmach->_cc);
+	//printf("%d |", pmach->_cc);
 }
 
 
 int get_instruction_value(Machine *pmach, Instruction instr) {
 	int value;
 	if (instr.instr_generic._immediate) {
-		printf("Immediate (value:%d)/ ", instr.instr_immediate._value);
+		//printf("Immediate (value:%d)/ ", instr.instr_immediate._value);
 		value = instr.instr_immediate._value;
 		//im = instr.instr_immediate;
 
@@ -139,20 +150,24 @@ int get_instruction_value(Machine *pmach, Instruction instr) {
 
 		if (instr.instr_generic._indexed) {
 			address = pmach->_registers[instr.instr_indexed._rindex] + instr.instr_indexed._offset;
-			printf("\n  (indexed:R[0x%x]: 0x%x + 0x%x = 0x%x)",
+			/*printf("\n  (indexed:R[0x%x]: 0x%x + 0x%x = 0x%x)",
 				instr.instr_indexed._rindex,
 				pmach->_registers[instr.instr_indexed._rindex],
 				instr.instr_indexed._offset,
-				address);
+				address);*/
 		}
 
 		value = pmach->_data[address];	
 		
-		printf("Not immediate (from adress: DATA[0x%x]=%d)/ ",
+		/*printf("Not immediate (from adress: DATA[0x%x]=%d)/ ",
 			address,
-			value);
+			value);*/
 	}
 	return value;
+}
+
+void block_immediate(Machine *pmach, Instruction instr) {
+	if (instr.instr_generic._immediate) error(ERR_IMMEDIATE, pmach->_pc-1);
 }
 
 void change_register(Machine *pmach, int reg, int delta) {
@@ -166,75 +181,79 @@ void change_register(Machine *pmach, int reg, int delta) {
  */
 
 void process_load(Machine *pmach, Instruction instr) {
-	printf("Processing LOAD :");
+	//printf("Processing LOAD :");
 	int value = get_instruction_value(pmach, instr);
-	printf(" R[%d] = %d", instr.instr_generic._regcond, value);
+	//printf(" R[%d] = %d", instr.instr_generic._regcond, value);
 	pmach->_registers[instr.instr_generic._regcond] = value;
 	update_cc(pmach, value);
-	printf("\n");
+	//printf("\n");
 }
 
 void process_store(Machine *pmach, Instruction instr) {
-	printf("Processing STORE : Data[%x] = REG[%d] = %d", instr.instr_absolute._address,
+	block_immediate(pmach, instr);
+	/*printf("Processing STORE : Data[%x] = REG[%d] = %d", instr.instr_absolute._address,
 		instr.instr_generic._regcond,
-		pmach->_registers[instr.instr_generic._regcond]);
+		pmach->_registers[instr.instr_generic._regcond]);*/
 	pmach->_data[instr.instr_absolute._address] = pmach->_registers[instr.instr_generic._regcond];
-	printf("\n");
+	//printf("\n");
 }
 
 void process_add(Machine *pmach, Instruction instr) {
-	printf("Processing ADD :");
+	//printf("Processing ADD :");
 	int value = get_instruction_value(pmach, instr);
-	printf("Adding to REG[%d] /", instr.instr_generic._regcond);
+	//printf("Adding to REG[%d] /", instr.instr_generic._regcond);
 	change_register(pmach, instr.instr_generic._regcond, value);
-	printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
-	printf("\n");
+	//printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
+	//printf("\n");
 }
 
 void process_sub(Machine *pmach, Instruction instr) {
-	printf("Processing SUB :");
+	//printf("Processing SUB :");
 	int value = get_instruction_value(pmach, instr);
-	printf("Subbing to REG[%d] /", instr.instr_generic._regcond);
+	//printf("Subbing to REG[%d] /", instr.instr_generic._regcond);
 	change_register(pmach, instr.instr_generic._regcond, -value);
-	printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
-	printf("\n");
+	//printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
+	//printf("\n");
 }
 
 void process_call(Machine *pmach, Instruction instr) {
-	printf("Processing CALL : %d=%d /", pmach->_cc, instr.instr_generic._regcond);
+	block_immediate(pmach, instr);
+	//printf("Processing CALL : %d=%d /", pmach->_cc, instr.instr_generic._regcond);
 	if (check_condition(pmach, instr)) {
 		stack_data(pmach, pmach->_pc);
-		printf("Going to address %x", instr.instr_absolute._address);
+		//printf("Going to address %x", instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
-	printf("\n");
+	//printf("\n");
 }
 
 void process_ret(Machine *pmach, Instruction instr) {
-	printf("Processing RET : ");
+	//printf("Processing RET : ");
 	pmach->_pc = pop_data(pmach);
-	printf("Going back to 0x%x", pmach->_pc);
-	printf("\n");
+	//printf("Going back to 0x%x", pmach->_pc);
+	//printf("\n");
 }
 
 void process_push(Machine *pmach, Instruction instr) {
-	printf("Processing PUSH :");
+	//printf("Processing PUSH :");
 	int value = get_instruction_value(pmach, instr);
 	stack_data(pmach, value);
-	printf("\n");
+	//printf("\n");
 }
 
 void process_pop(Machine *pmach, Instruction instr) {
-	printf("Processing POP :");
+	block_immediate(pmach, instr);
+	//printf("Processing POP :");
 	pmach->_data[instr.instr_absolute._address] = pop_data(pmach);
 	printf("\n");
 }
 
 void process_branch(Machine *pmach, Instruction instr) {
-	printf("Processing BRANCH :");
+	//printf("Processing BRANCH :");
+	block_immediate(pmach, instr);
 	if (check_condition(pmach, instr)) {
-		printf("True ! Going to %x", instr.instr_absolute._address);
+		//printf("True ! Going to %x", instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
-	printf("\n");
+	//printf("\n");
 }
