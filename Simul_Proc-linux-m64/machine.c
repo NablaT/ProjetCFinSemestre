@@ -37,7 +37,7 @@ void load_program(Machine *pmach,
   pmach->_text=text;// Mémoire pour les instructions
   //Ainsi que data
   pmach->_data=data; //Mémoire de données
-
+  pmach->_textsize=textsize;
   //Initialisation de datasize et dataend
   pmach->_datasize=datasize; 
   pmach->_dataend=dataend; 
@@ -71,8 +71,6 @@ void load_program(Machine *pmach,
 
 void read_program(Machine *pmach, const char *programfile){
   unsigned int textsize, datasize, dataend; 
-  
-
   int opening= open(programfile,O_RDONLY);
 
   //Verifications avant la lecture par rapport aux champs de pmach.
@@ -109,46 +107,89 @@ void read_program(Machine *pmach, const char *programfile){
   load_program(pmach, textsize,instruction,datasize,data,dataend); 
 }
 
+//! Affichage du programme et des données
+/*!
+ * On affiche les instructions et les données en format hexadécimal, sous une
+ * forme prête à être coupée-collée dans le simulateur.
+ *
+ * Pendant qu'on y est, on produit aussi un dump binaire dans le fichier
+ * dump.prog. Le format de ce fichier est compatible avec l'option -b de
+ * test_simul.
+ Rappel
+- 3 entiers non signés, la taille du segment de texte (\c textsize),
+*    celle du segment de données (\c datasize) et la première adresse libre de
+*    données (\c dataend) ;
+*
+*    - une suite de \c textsize entiers non signés représentant le contenu du
+*    segment de texte (les instructions) ;
+*
+*    - une suite de \c datasize entiers non signés représentant le contenu initial du
+*    segment de données.
+*
+*
+*
+* \param pmach la machine en cours d'exécution
+*/
 void dump_memory(Machine *pmach){
-    putchar('\n');
-    printf("Instruction text[] = {\n");
-    for(int i = 0; i < pmach->_textsize; i++){
-       if(i%4 == 0){
-           putchar('\t');
-       }
-       printf("0x%08x, ", pmach->_text[i]._raw);
-       if(i%4 == 3){
-           putchar('\n');
-       }
+  putchar('\n');
+  //voir pour fopen
+  if(open('./Examples/dump.bin',O_TRUNC)<0){
+    printf("Le fichier dump.bin n'existe pas\n");
+  }
+  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
+    printf("Erreur lors de la lecture de textsize\n");
+    exit(1);
+  }
+  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
+    printf("Erreur lors de la lecture de datasize\n");
+    exit(1);
+  }
+  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
+    printf("Erreur lors de la lecture de datasize\n");
+    exit(1);
+  }
+  printf("Instruction text[] = {\n");
+  for(int i = 0; i < pmach->_textsize; i++){
+    if(i%4 == 0){
+      putchar('\t');
     }
-    printf("unsigned textsize = %d;\n", pmach->_textsize);
+    if(printf("./Examples/dump.bin","%b")==-1){
+      printf("Erreur lors de la lecture de datasize\n");
+      exit(1);
+    }
+    printf("0x%08x, ", pmach->_text[i]._raw);
+    if(i%4 == 3){
+      putchar('\n');
+    }
+  }
+  printf("unsigned textsize = %d;\n", pmach->_textsize);
 }
 
 void print_program(Machine *pmach){
-    putchar('\n');
-    printf("*** PROGRAM (size: %d) ***", pmach->_textsize);
-    putchar('\n');
+  putchar('\n');
+  printf("*** PROGRAM (size: %d) ***", pmach->_textsize);
+  putchar('\n');
     
-    for(int i = 0; i < pmach->_textsize; i++){
-       printf("0x%04x: 0x%08x\t ", i, pmach->_text[i]._raw);
-       print_instruction(pmach->_text[i],pmach->_text[i].instr_absolute._address);
-       putchar('\n');
-    }
+  for(int i = 0; i < pmach->_textsize; i++){
+    printf("0x%04x: 0x%08x\t ", i, pmach->_text[i]._raw);
+    print_instruction(pmach->_text[i],pmach->_text[i].instr_absolute._address);
+    putchar('\n');
+  }
 }
 
 void print_data(Machine *pmach){
-    putchar('\n');
-    printf("*** DATA (size: %d, end = 0x%08x (%d)) ***", pmach->_datasize, pmach->_dataend, pmach->_dataend);
-    putchar('\n');
+  putchar('\n');
+  printf("*** DATA (size: %d, end = 0x%08x (%d)) ***", pmach->_datasize, pmach->_dataend, pmach->_dataend);
+  putchar('\n');
     
-    for(int i = 0;i < pmach->_datasize; i++){
-       printf("0x%04x: 0x%08x %d\t", i, pmach->_data[i], pmach->_data[i]);
+  for(int i = 0;i < pmach->_datasize; i++){
+    if((i%3 == 0) && (i != 0)){
+      putchar('\n');
+    }    
+    printf("0x%04x: 0x%08x %d\t", i, pmach->_data[i], pmach->_data[i]);
     
-       if((i%2 == 0) && (i != 0)){
-          putchar('\n');
-       }
-    }
-    putchar('\n');
+  }
+  putchar('\n');
 }
 
 /*
