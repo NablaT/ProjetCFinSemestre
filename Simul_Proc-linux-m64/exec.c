@@ -5,7 +5,8 @@
 int i = 0;
 
 void stack_data(Machine *pmach, int data);
-int pop_data(Machine *pmach);
+int  pop_data(Machine *pmach);
+void check_data_address(Machine *pmach, int addr);
 
 void process_load(Machine *pmach, Instruction instr);
 void process_store(Machine *pmach, Instruction instr);
@@ -65,7 +66,9 @@ bool decode_execute(Machine *pmach, Instruction instr) {
 		case PUSH: process_push(pmach, instr); break;
 		case POP: process_pop(pmach, instr); break;
 
-		case HALT: return false;
+		case HALT: 
+			warning(WARN_HALT, pmach->_pc-1);
+			return false;
 		
 		default: error(ERR_UNKNOWN, pc);
 	}
@@ -147,7 +150,7 @@ int get_instruction_value(Machine *pmach, Instruction instr) {
 
 	} else {
 		int address = instr.instr_absolute._address;
-
+		check_data_address(pmach, address) ;
 		if (instr.instr_generic._indexed) {
 			address = pmach->_registers[instr.instr_indexed._rindex] + instr.instr_indexed._offset;
 			/*printf("\n  (indexed:R[0x%x]: 0x%x + 0x%x = 0x%x)",
@@ -173,6 +176,12 @@ void block_immediate(Machine *pmach, Instruction instr) {
 void change_register(Machine *pmach, int reg, int delta) {
 	pmach->_registers[reg] += delta;
 	update_cc(pmach, pmach->_registers[reg]);
+}
+
+void check_data_address(Machine *pmach, int addr) {
+	if (addr > pmach->_datasize) {
+		error(ERR_SEGDATA, pmach->_pc - 1);
+	}
 }
 
 /*
@@ -222,6 +231,7 @@ void process_call(Machine *pmach, Instruction instr) {
 	if (check_condition(pmach, instr)) {
 		stack_data(pmach, pmach->_pc);
 		//printf("Going to address %x", instr.instr_absolute._address);
+		check_data_address(pmach, instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
 	//printf("\n");
@@ -244,6 +254,7 @@ void process_push(Machine *pmach, Instruction instr) {
 void process_pop(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
 	//printf("Processing POP :");
+	check_data_address(pmach, instr.instr_absolute._address);
 	pmach->_data[instr.instr_absolute._address] = pop_data(pmach);
 	printf("\n");
 }
@@ -253,6 +264,7 @@ void process_branch(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
 	if (check_condition(pmach, instr)) {
 		//printf("True ! Going to %x", instr.instr_absolute._address);
+		check_data_address(pmach, instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
 	//printf("\n");
