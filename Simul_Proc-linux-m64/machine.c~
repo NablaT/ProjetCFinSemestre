@@ -71,6 +71,7 @@ void load_program(Machine *pmach,
 
 void read_program(Machine *pmach, const char *programfile){
   unsigned int textsize, datasize, dataend; 
+  
 
   int opening= open(programfile,O_RDONLY);
 
@@ -81,7 +82,7 @@ void read_program(Machine *pmach, const char *programfile){
   }
 
   //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
-  read(opening, &dataend, sizeof(pmach->_dataend));//sizeof 32
+  read(opening, &dataend, sizeof(pmach->_dataend));//sizeof
   
   //Verification du nombre de bits lus pour datasize. 
   read(opening, &datasize, sizeof(pmach->_datasize));
@@ -110,15 +111,34 @@ void read_program(Machine *pmach, const char *programfile){
 
 void dump_memory(Machine *pmach){
 
-
 }
 
 void print_program(Machine *pmach){
-
+    putchar('\n');
+    printf("*** PROGRAM (size: %d) ***", pmach->textsize);
+    putchar('\n');
+    
+    for(int i = 0; i < pmach->textsize; i++){
+       printf("0x%04x: 0x%08x\t ", i, pmach->_text[i]._raw);
+       print_instruction(pmach->_text[i],pmach->_text[i].instr_absolute._address);
+       putchar('\n');
+    }
 }
 
 void print_data(Machine *pmach){
+    putchar('\n');
+    printf("*** DATA (size: %d, end = 0x%08x (%d)) ***", pmach->datasize, pmach->dataend, pmach->dataend);
+    putchar('\n');
+    
+    for(int i = 0;i < pmach->datasize; i++){
+       printf("0x%04x: 0x%08x %d\t", i, pmach->data[i], pmach->data[i]);
+    
+    if((i%2 == 0) && (i != 0)){
+       putchar('\n');
+    }
 
+
+    }
 }
 
 /*
