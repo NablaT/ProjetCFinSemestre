@@ -180,10 +180,8 @@ void simul(Machine *pmach, bool debug){
   while(stop){
     //On appelle la fonction trace qui se trouve dans exec.c. On lui donne en parametre le message à afficher, la machine qui est en cours d'execution (pmach), l'instruction en cours et l'adresse de l'instruction grâce à pc. 
 
-    ///////// A ENLEVER APRES RECUPERATION D'EXEC DE TOM ////////////////////////:
     trace("Execution",pmach,pmach->_text[pmach->_pc],pmach->_pc);
 
-    /////////////////////////////////////////////////////////////////
     if(pmach->_pc<pmach->_textsize){
       
       stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1. Cette fonction renvoie faux lorsque l'instruction a decoder est HALT qui marque la fin.
