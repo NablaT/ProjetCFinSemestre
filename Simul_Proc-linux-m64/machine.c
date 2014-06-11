@@ -110,15 +110,26 @@ void read_program(Machine *pmach, const char *programfile){
 }
 
 void dump_memory(Machine *pmach){
-
+    putchar('\n');
+    printf("Instruction text[] = {\n");
+    for(int i = 0; i < pmach->_textsize; i++){
+       if(i%4 == 0){
+           putchar('\t');
+       }
+       printf("0x%08x, ", pmach->_text[i]._raw);
+       if(i%4 == 3){
+           putchar('\n');
+       }
+    }
+    printf("unsigned textsize = %d;\n", pmach->_textsize);
 }
 
 void print_program(Machine *pmach){
     putchar('\n');
-    printf("*** PROGRAM (size: %d) ***", pmach->textsize);
+    printf("*** PROGRAM (size: %d) ***", pmach->_textsize);
     putchar('\n');
     
-    for(int i = 0; i < pmach->textsize; i++){
+    for(int i = 0; i < pmach->_textsize; i++){
        printf("0x%04x: 0x%08x\t ", i, pmach->_text[i]._raw);
        print_instruction(pmach->_text[i],pmach->_text[i].instr_absolute._address);
        putchar('\n');
@@ -127,11 +138,11 @@ void print_program(Machine *pmach){
 
 void print_data(Machine *pmach){
     putchar('\n');
-    printf("*** DATA (size: %d, end = 0x%08x (%d)) ***", pmach->datasize, pmach->dataend, pmach->dataend);
+    printf("*** DATA (size: %d, end = 0x%08x (%d)) ***", pmach->_datasize, pmach->_dataend, pmach->_dataend);
     putchar('\n');
     
-    for(int i = 0;i < pmach->datasize; i++){
-       printf("0x%04x: 0x%08x %d\t", i, pmach->data[i], pmach->data[i]);
+    for(int i = 0;i < pmach->_datasize; i++){
+       printf("0x%04x: 0x%08x %d\t", i, pmach->_data[i], pmach->_data[i]);
     
        if((i%2 == 0) && (i != 0)){
           putchar('\n');
