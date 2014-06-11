@@ -150,7 +150,6 @@ int get_instruction_value(Machine *pmach, Instruction instr) {
 
 	} else {
 		int address = instr.instr_absolute._address;
-		check_data_address(pmach, address) ;
 		if (instr.instr_generic._indexed) {
 			address = pmach->_registers[instr.instr_indexed._rindex] + instr.instr_indexed._offset;
 			/*printf("\n  (indexed:R[0x%x]: 0x%x + 0x%x = 0x%x)",
@@ -159,6 +158,7 @@ int get_instruction_value(Machine *pmach, Instruction instr) {
 				instr.instr_indexed._offset,
 				address);*/
 		}
+		check_data_address(pmach, address) ;
 
 		value = pmach->_data[address];	
 		
