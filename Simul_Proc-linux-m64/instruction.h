@@ -5,7 +5,6 @@
  * \file instruction.h
  * \brief Description du jeu d'instruction.
  */
-
 #include <stdbool.h>
 #include <stdint.h>
 
