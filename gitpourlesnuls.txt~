@@ -16,25 +16,9 @@ git commit -m "Description de tes changements ici" : Le -m permet d'ajouter une 
 git push origin master  : Tu met en ligne tes modifs. Avant cette étape tes modifications restent en local. 
 
 
-======== Pour les branches ========
-
-Voir les branches: 
-
-git branch -a
-
-Voir la branche dans laquelle je suis: 
-
-git branch
-
-Pour changer de branches: 
+======== Pour changer de branche ========
 
 git checkout nom_branche
-
-=========================================
-
-======== Pour afficher les branches =====
-
-git branch -a
 
 =========================================
 
@@ -43,9 +27,4 @@ EN CAS DE MERGE:
 Hurlez !
 
 Ou appelez nous.
-
---> SOLUTION! ===
-	--> sudo apt-get install meld
-	--> En cas de merge conflict :
-		git mergetool
 
