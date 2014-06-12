@@ -137,7 +137,7 @@ void read_program(Machine *pmach, const char *programfile){
 void dump_memory(Machine *pmach){
   putchar('\n');
   
-  int file= open("dump.bin", O_TRUNC|O_WRONLY,S_IRUSR|S_IWUSR); //Dernier champ permission: qui peut lire ou ecrire dans le fichier
+  int file= open("dump.bin", O_TRUNC|O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR); //Dernier champ permission: qui peut lire ou ecrire dans le fichier
   //On verifie si il n'y a pas eu de problème lors de l'ouverture.
   if (file==-1){
     printf("Erreur lors de l'ouverture du fichier dump.bin\n");
