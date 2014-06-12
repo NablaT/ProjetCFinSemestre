@@ -37,7 +37,7 @@ void load_program(Machine *pmach,
   pmach->_text=text;// Mémoire pour les instructions
   //Ainsi que data
   pmach->_data=data; //Mémoire de données
-  pmach->_textsize=textsize;
+  pmach->_textsize = textsize;
   //Initialisation de datasize et dataend
   pmach->_datasize=datasize; 
   pmach->_dataend=dataend; 
@@ -161,8 +161,22 @@ void dump_memory(Machine *pmach){
     if(i%4 == 3){
       putchar('\n');
     }
+    printf("};\n");
+    printf("unsigned textsize = %d;\n", pmach->_textsize);
+    
+    for(int i = 0 ; i < pmach->_datasize ; i++){
+      printf("\t0x%08x, ", pmach->_data[i]);
+      if (i % 4 == 3){
+	putchar('\n');
+      }
+      if (pmach->_datasize % 4 != 0){
+	putchar('\n');
+      }
+      printf("};\n");
+      printf("unsigned datasize = %d;\n", pmach->_datasize);
+      printf("unsigned dataend = %d;\n", pmach->_dataend);
+    }
   }
-  printf("unsigned textsize = %d;\n", pmach->_textsize);
 }
 
 void print_program(Machine *pmach){
