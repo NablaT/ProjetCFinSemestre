@@ -79,14 +79,18 @@ void read_program(Machine *pmach, const char *programfile){
     exit(1);
   }
 
-  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
-  read(opening, &dataend, sizeof(pmach->_dataend));//sizeof
-  
+
+  //Verification du nombre de bits lus pour textsize.
+  read(opening, &textsize, sizeof(pmach->_textsize));
+
+
   //Verification du nombre de bits lus pour datasize. 
   read(opening, &datasize, sizeof(pmach->_datasize));
   
-  //Verification du nombre de bits lus pour textsize.
-  read(opening, &textsize, sizeof(pmach->_textsize));
+
+  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
+  read(opening, &dataend, sizeof(pmach->_dataend));//sizeof
+  
 
   //On lit les instructions:
   Instruction *instruction=malloc(textsize * sizeof(Instruction));
@@ -145,10 +149,49 @@ void dump_memory(Machine *pmach){
   write(file, &pmach->_datasize,sizeof(pmach->_datasize));
   //Puis dataend
   write(file, &pmach->_dataend,sizeof(pmach->_dataend));
+
+  putchar('\n');
   printf("Instruction text[] = {\n");
+
   for(int i = 0; i < pmach->_textsize; i++){
+
     if(i%4 == 0){
+
       putchar('\t');
+
+    }
+    write(file,&pmach->_text[i]._raw, sizeof(pmach->_text[0]));
+    printf("0x%08x, ", pmach->_text[i]._raw);
+    if(i%4 == 3){
+      putchar('\n');
+
+    }
+
+  }
+  printf("\n};\n");
+  printf("unsigned textsize = %d;\n\n", pmach->_textsize);
+  
+  
+  printf("Word data[] = {\n");
+  for(int i = 0 ; i < pmach->_datasize ; i++){
+    write(file,&pmach->_data[i],sizeof(Word));
+    printf("\t0x%08x, ", pmach->_data[i]);
+    if (i % 4 == 3){
+      putchar('\n');
+    }
+    if (pmach->_datasize % 4 != 0){
+      putchar('\n');
+    }
+  }
+
+  printf("};\n");
+  
+  printf("unsigned datasize = %d;\n", pmach->_datasize);
+  printf("unsigned dataend = %d;\n", pmach->_dataend);
+  /*
+    for(int i = 0; i < pmach->_textsize; i++){
+    if(i%4 == 0){
+    putchar('\t');
     }
     write(file,&pmach->_text[i]._raw, sizeof(pmach->_text[0]));
     printf("0x%08x, ", pmach->_text[i]._raw);
@@ -172,7 +215,7 @@ void dump_memory(Machine *pmach){
     printf("};\n");
     printf("unsigned datasize = %d;\n", pmach->_datasize);
     printf("unsigned dataend = %d;\n", pmach->_dataend);
-  }
+    }*/
   int closing=close(file);
   if(closing!=0){
     printf("Erreur lors de la fermture du fichier binaire dump.bin\n");
