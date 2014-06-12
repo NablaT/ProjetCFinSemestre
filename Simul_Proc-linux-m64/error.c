@@ -27,31 +27,31 @@
  * \param addr adresse de l'erreur
  */
 void error(Error err, unsigned addr){
-	printf("Les erreurs:\n");
+	printf("ERROR: \n");
 	switch(err){
 		case ERR_NOERROR:
-			printf("Pas d'erreur au \t%08x\n", addr);
+			printf("Pas d'erreur au 0x\t%08x\n", addr);
 			break;
 		case ERR_UNKNOWN:
-			printf("Instruction inconnue au \t%08x\n", addr);
+			printf("Instruction inconnue au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_ILLEGAL:
-			printf("Instruction illégale au \t%08x\n", addr);
+			printf("Instruction illégale au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_CONDITION:
-			printf("Condition illégale au \t%08x\n", addr);
+			printf("Condition illégale au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_IMMEDIATE:
-			printf("Valeur immédiate interdite au \t%08x\n", addr);
+			printf("Valeur immédiate interdite au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_SEGTEXT:
-			printf("Violation de taille du segment de texte au \t%08x\n", addr);
+			printf("Violation de taille du segment de texte au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_SEGDATA:
-			printf("Violation de taille du segment de données au \t%08x\n", addr);
+			printf("Violation de taille du segment de données au 0x\t%08x\n", addr);
 			exit(1);
 		case ERR_SEGSTACK:
-			printf("Violation de taille du segment de pile au \t%08x\n", addr);
+			printf("Violation de taille du segment de pile au 0x\t%08x\n", addr);
 			exit(1);
 		default:
 			exit(0);
