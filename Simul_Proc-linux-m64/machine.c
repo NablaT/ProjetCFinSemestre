@@ -132,31 +132,25 @@ void read_program(Machine *pmach, const char *programfile){
 */
 void dump_memory(Machine *pmach){
   putchar('\n');
-  //voir pour fopen
-  if(open('./Examples/dump.bin',O_TRUNC)<0){
-    printf("Le fichier dump.bin n'existe pas\n");
+  
+  int file= open("dump.bin", O_TRUNC|O_WRONLY,S_IRUSR|S_IWUSR); //Dernier champ permission: qui peut lire ou ecrire dans le fichier
+  //On verifie si il n'y a pas eu de problème lors de l'ouverture.
+  if (file==-1){
+    printf("Erreur lors de l'ouverture du fichier dump.bin\n");
+    exit(1); 
   }
-  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
-    printf("Erreur lors de la lecture de textsize\n");
-    exit(1);
-  }
-  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
-    printf("Erreur lors de la lecture de datasize\n");
-    exit(1);
-  }
-  if(fprintf('./Examples/dump.bin',"%b",pmach->_textsize)<0){
-    printf("Erreur lors de la lecture de datasize\n");
-    exit(1);
-  }
+  //En premier on met textsize
+  write(file, &pmach->_textsize,sizeof(pmach->_textsize));
+  //Puis datasize
+  write(file, &pmach->_datasize,sizeof(pmach->_datasize));
+  //Puis dataend
+  write(file, &pmach->_dataend,sizeof(pmach->_dataend));
   printf("Instruction text[] = {\n");
   for(int i = 0; i < pmach->_textsize; i++){
     if(i%4 == 0){
       putchar('\t');
     }
-    if(printf("./Examples/dump.bin","%b")==-1){
-      printf("Erreur lors de la lecture de datasize\n");
-      exit(1);
-    }
+    write(file,&pmach->_text[i]._raw, sizeof(pmach->_text[0]));
     printf("0x%08x, ", pmach->_text[i]._raw);
     if(i%4 == 3){
       putchar('\n');
@@ -164,19 +158,27 @@ void dump_memory(Machine *pmach){
     printf("};\n");
     printf("unsigned textsize = %d;\n", pmach->_textsize);
     
-    for(int i = 0 ; i < pmach->_datasize ; i++){
-      printf("\t0x%08x, ", pmach->_data[i]);
-      if (i % 4 == 3){
-	putchar('\n');
-      }
-      if (pmach->_datasize % 4 != 0){
-	putchar('\n');
-      }
-      printf("};\n");
-      printf("unsigned datasize = %d;\n", pmach->_datasize);
-      printf("unsigned dataend = %d;\n", pmach->_dataend);
-    }
   }
+      
+  for(int i = 0 ; i < pmach->_datasize ; i++){
+    write(file,&pmach->_data[i],sizeof(Word));
+    printf("\t0x%08x, ", pmach->_data[i]);
+    if (i % 4 == 3){
+      putchar('\n');
+    }
+    if (pmach->_datasize % 4 != 0){
+      putchar('\n');
+    }
+    printf("};\n");
+    printf("unsigned datasize = %d;\n", pmach->_datasize);
+    printf("unsigned dataend = %d;\n", pmach->_dataend);
+  }
+  int closing=close(file);
+  if(closing!=0){
+    printf("Erreur lors de la fermture du fichier binaire dump.bin\n");
+    exit(1); 
+  }
+  
 }
 
 void print_program(Machine *pmach){
@@ -225,7 +227,7 @@ char put_cc(Condition_Code cc){
   case CC_N: 
     return 'N';
   }
-  return NULL; 
+  return 'A'; 
 }
 
 /* Fonction print_registers. Cette fonction affiche tous les registres avec leur adresse et leur valeur.
@@ -251,6 +253,10 @@ void print_cpu(Machine *pmach){
   printf("PC:  0x%08x\tCC: ",pmach->_pc); //On affiche l'adresse de PC
   //On appelle la fonction put_cc qui renvoie le caractere à afficher en fonction du code condition de la machine courante.
   char char_to_put=put_cc(pmach->_cc);
+  if(char_to_put=='A'){
+    printf("Erreur code condition dans la fonction put_cc dans machine.c\n");
+    exit(1);
+  }
   putchar(char_to_put);
   putchar('\n');
   putchar('\n');
