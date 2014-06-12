@@ -1,4 +1,4 @@
-#include "machine.h"
+#include "../machine.h"
 
 //! Second exemple de segment de texte.
 /*!
@@ -7,7 +7,7 @@
  */
 
 Instruction text[] = {
-//   type		 cop	imm	ind	regcond	operand
+//  type                cop     imm	    ind  regcond operand
 //-------------------------------------------------------------
     {.instr_absolute =  {PUSH, 	 false, false, 	0, 	2	}},  // 0
     {.instr_absolute =  {PUSH, 	 false, false, 	0, 	3	}},  // 1

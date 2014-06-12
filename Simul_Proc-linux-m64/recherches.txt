@@ -1,0 +1,13 @@
+cop		imm	    ind	 regcond  operand
+CALL, 	 false, false, 	NC, 	10	}},  // 2
+Call : 07
+
+
+07a0 0000 (big endian) (= 0000 A007 (~)) = 700A 0000 (little endian)
+1110 0000 0000 0101 0000 0000 0000 0000 
+COP   |IX| RC |			OP				|
+
+1110 0010 0000 0101 0000 0000 0000 0000 
+
+
+0000 0111 1010 0000 0000 0000 0000 0000
