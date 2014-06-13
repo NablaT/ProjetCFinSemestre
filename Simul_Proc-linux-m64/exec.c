@@ -19,27 +19,6 @@ void process_ret(Machine *pmach, Instruction instr);
 void process_push(Machine *pmach, Instruction instr);
 void process_pop(Machine *pmach, Instruction instr);
 
-char* code_op_name (Code_Op cop) {
-	switch(cop) {
-		case	ILLOP: return "ILLOP";
-		case	NOP: return "NOP";
-
-		case	LOAD: return "LOAD";
-		case	STORE: return "STORE";
-		case	ADD: return "ADD";
-		case	SUB: return "SUB";
-
-		case	BRANCH: return "BRANCH";
-		case	CALL: return "CALL";
-		case	RET: return "RET";
-		case	PUSH: return "PUSH";
-		case	POP: return "POP";
-
-		case	HALT: return "HALT";
-		default: return "";
-	}
-}
-
 void trace(const char *msg, Machine *pmach, Instruction instr, unsigned addr);
 
 //! Décodage et exécution d'une instruction
@@ -91,30 +70,55 @@ void trace(const char *msg, Machine *pmach, Instruction instr, unsigned addr) {
 }
 
 /*
- *		METHODES PRATIQUES
+ *		METHODES UTILES
  * 
  */
 
+/*!
+ * Vérifie que le pointeur de la pile ne va pas causer d'erreur de segmentation.
+ * Lance une erreur ERR_SEGSTACK si c'est le cas.
+ *
+ * \param pmach Machine sur laquelle effectuer la vérification
+ */
 void stack_validation(Machine *pmach) {
 	// Check the stack index
 	if (pmach->_sp >= pmach->_datasize || pmach->_sp < pmach->_dataend) {
-		//printf("%d , size=%d, end=%d", pmach->_sp, pmach-->_sp, pm);
 		error(ERR_SEGSTACK, pmach->_pc-1);
 	}
 }
 
+/*!
+ * Empile une valeur dans la pile d'une Machine.
+ *
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \param data Valeur à empiler
+ */
 void stack_data(Machine *pmach, int data) {
-	//printf("\n==> Stacking value %d to %x\n", data, pmach->_sp);
 	pmach->_data[(pmach->_sp)--] = data;
 	stack_validation(pmach);
 }
 
+/*!
+ * Dépile la valeur au sommet de la pile d'une Machine.
+ * Vérifie aussi les problèmes de segmentation de pile.
+ *
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \return La valeur au sommet de la pile
+ */
 int pop_data(Machine *pmach) {
 	int data = pmach->_data[++(pmach->_sp)];
 	stack_validation(pmach);
 	return data;
 }
 
+/*!
+ * Vérifie si une condition est vrai ou pas.
+ * Lance une erreur si le code de la condition n'est pas reconnu.
+
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \param instr Instruction contenant la condition à vérifier
+ * \return Vrai si la condition est respectée ; faux sinon
+ */
 bool check_condition(Machine *pmach, Instruction instr) {
 	switch (instr.instr_generic._regcond) {
 		case NC: return true;
@@ -132,125 +136,167 @@ bool check_condition(Machine *pmach, Instruction instr) {
 	return false;
 }
 
+/*!
+ * Met à jour la valeur de CC (pour les conditions) dans une Machine.
+ *
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \param value Valeur à mettre dans CC
+ */
 void update_cc(Machine *pmach, int value) {
-	//printf("\n\t|Updating CC with %d: ", value);
 	if (value == 0) 	pmach->_cc = CC_Z;
 	else if (value < 0) pmach->_cc = CC_N;
 	else if (value > 0) pmach->_cc = CC_P;
-	//printf("%d |", pmach->_cc);
 }
 
-
+/*!
+ * Retourne la valeur contenue dans une instruction.
+ * Les différents modes sont supportés : immediate, absolute & indexed.
+ *
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \param instr Instruction de laquelle récupérer la valeur.
+ * \return La valeur correspondante.
+ */
 int get_instruction_value(Machine *pmach, Instruction instr) {
 	int value;
 	if (instr.instr_generic._immediate) {
-		//printf("Immediate (value:%d)/ ", instr.instr_immediate._value);
 		value = instr.instr_immediate._value;
-		//im = instr.instr_immediate;
-
 	} else {
 		int address = instr.instr_absolute._address;
 		if (instr.instr_generic._indexed) {
 			address = pmach->_registers[instr.instr_indexed._rindex] + instr.instr_indexed._offset;
-			/*printf("\n  (indexed:R[0x%x]: 0x%x + 0x%x = 0x%x)",
-				instr.instr_indexed._rindex,
-				pmach->_registers[instr.instr_indexed._rindex],
-				instr.instr_indexed._offset,
-				address);*/
 		}
 		check_data_address(pmach, address) ;
 
 		value = pmach->_data[address];	
-		
-		/*printf("Not immediate (from adress: DATA[0x%x]=%d)/ ",
-			address,
-			value);*/
 	}
 	return value;
 }
 
+/*!
+ * Lance une erreur si l'instruction est immédiate.
+ *
+ * \param pmach Machine dans laquelle effectuer l'opération
+ * \param instr Instruction à vérifier
+ */
 void block_immediate(Machine *pmach, Instruction instr) {
 	if (instr.instr_generic._immediate) error(ERR_IMMEDIATE, pmach->_pc-1);
 }
 
+/*!
+ * Applique un delta sur la valeur d'un registre.
+ *
+ * \param pmach Machine dans laquelle on effectue la modification
+ * \param reg Numéro du registre à modifier
+ * \param delta Variation de valeur à appliquer
+ */
 void change_register(Machine *pmach, int reg, int delta) {
 	pmach->_registers[reg] += delta;
 	update_cc(pmach, pmach->_registers[reg]);
 }
 
+/*!
+ * Vérifie que la valeur de l'adresse ne provoque pas d'erreur de 
+ * segmentation sur Data. Lance une erreur si c'est le cas.
+ */
 void check_data_address(Machine *pmach, int addr) {
 	if (addr > pmach->_datasize) {
 		error(ERR_SEGDATA, pmach->_pc - 1);
 	}
 }
 
-/*
- *		TRAITEMENT DES INSTRUCTIONS
+/*======================================
  *
+ *		TRAITEMENT DES INSTRUCTIONS
+ *======================================
  */
 
+/*!
+ * Traitement de l'instruction LOAD.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_load(Machine *pmach, Instruction instr) {
-	//printf("Processing LOAD :");
 	int value = get_instruction_value(pmach, instr);
-	//printf(" R[%d] = %d", instr.instr_generic._regcond, value);
 	pmach->_registers[instr.instr_generic._regcond] = value;
 	update_cc(pmach, value);
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction STORE.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_store(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
-	/*printf("Processing STORE : Data[%x] = REG[%d] = %d", instr.instr_absolute._address,
-		instr.instr_generic._regcond,
-		pmach->_registers[instr.instr_generic._regcond]);*/
 	pmach->_data[instr.instr_absolute._address] = pmach->_registers[instr.instr_generic._regcond];
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction ADD.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_add(Machine *pmach, Instruction instr) {
-	//printf("Processing ADD :");
 	int value = get_instruction_value(pmach, instr);
-	//printf("Adding to REG[%d] /", instr.instr_generic._regcond);
 	change_register(pmach, instr.instr_generic._regcond, value);
-	//printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction SUB.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_sub(Machine *pmach, Instruction instr) {
-	//printf("Processing SUB :");
 	int value = get_instruction_value(pmach, instr);
-	//printf("Subbing to REG[%d] /", instr.instr_generic._regcond);
 	change_register(pmach, instr.instr_generic._regcond, -value);
-	//printf("Next value : %d (%x) /", pmach->_registers[instr.instr_generic._regcond], pmach->_registers[instr.instr_generic._regcond]);
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction CALL.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_call(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
-	//printf("Processing CALL : %d=%d /", pmach->_cc, instr.instr_generic._regcond);
 	if (check_condition(pmach, instr)) {
 		stack_data(pmach, pmach->_pc);
-		//printf("Going to address %x", instr.instr_absolute._address);
 		check_data_address(pmach, instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction RET.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_ret(Machine *pmach, Instruction instr) {
-	//printf("Processing RET : ");
 	pmach->_pc = pop_data(pmach);
-	//printf("Going back to 0x%x", pmach->_pc);
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction PUSH.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_push(Machine *pmach, Instruction instr) {
-	//printf("Processing PUSH :");
 	int value = get_instruction_value(pmach, instr);
 	stack_data(pmach, value);
-	//printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction POP.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_pop(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
 	//printf("Processing POP :");
@@ -259,13 +305,16 @@ void process_pop(Machine *pmach, Instruction instr) {
 	printf("\n");
 }
 
+/*!
+ * Traitement de l'instruction BRANCH.
+ *
+ * \param pmach Machine qui exécute l'instruction
+ * \param instr L'instruction à exécuter
+ */
 void process_branch(Machine *pmach, Instruction instr) {
-	//printf("Processing BRANCH :");
 	block_immediate(pmach, instr);
 	if (check_condition(pmach, instr)) {
-		//printf("True ! Going to %x", instr.instr_absolute._address);
 		check_data_address(pmach, instr.instr_absolute._address);
 		pmach->_pc = instr.instr_absolute._address;
 	}
-	//printf("\n");
 }
