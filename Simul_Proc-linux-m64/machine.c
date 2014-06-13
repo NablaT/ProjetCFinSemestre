@@ -142,7 +142,7 @@ void print_program(Machine *pmach){
   putchar('\n');
   printf("*** PROGRAM (size: %d) ***", pmach->_textsize);
   putchar('\n');
-    
+  
   for(int i = 0; i < pmach->_textsize; i++){
     printf("0x%04x: 0x%08x\t ", i, pmach->_text[i]._raw);
     print_instruction(pmach->_text[i],pmach->_text[i].instr_absolute._address);
