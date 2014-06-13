@@ -27,7 +27,7 @@
  * \param addr adresse de l'erreur
  */
 void error(Error err, unsigned addr){
-	printf("ERROR: \n");
+	printf("ERROR: ");
 	switch(err){
 		case ERR_NOERROR:
 			printf("Pas d'erreur à l'adresse 0x%08x\n", addr);
