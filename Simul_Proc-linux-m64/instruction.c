@@ -15,7 +15,6 @@
  */
 void print_instruction(Instruction instr, unsigned addr)
 {
-
 	//Affichage du nom d'instruction : récupération de la position dans le tableau 
 	//cop_names dans la structure générique du header
 	printf("%s ", cop_names[instr.instr_generic._cop] );

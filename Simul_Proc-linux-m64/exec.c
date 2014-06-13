@@ -2,8 +2,6 @@
 #include "machine.h"
 #include "error.h"
 
-int i = 0;
-
 void stack_data(Machine *pmach, int data);
 int  pop_data(Machine *pmach);
 void check_data_address(Machine *pmach, int addr);

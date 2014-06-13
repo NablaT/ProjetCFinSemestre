@@ -11,18 +11,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-
-//! Chargement d'un programme
-/*!
- * La machine est réinitialisée et ses segments de texte et de données sont
- * remplacés par ceux fournis en paramètre.
- *
- * \param pmach la machine en cours d'exécution
- * \param textsize taille utile du segment de texte
- * \param text le contenu du segment de texte
- * \param datasize taille utile du segment de données
- * \param data le contenu initial du segment de texte
- */
 void load_program(Machine *pmach,
                   unsigned textsize, Instruction text[textsize],
                   unsigned datasize, Word data[datasize],  unsigned dataend){
@@ -47,93 +35,44 @@ void load_program(Machine *pmach,
 
 }
 
-//! Lecture d'un programme depuis un fichier binaire
-/*!
- * Le fichier binaire a le format suivant :
- * 
- *    - 3 entiers non signés, la taille du segment de texte (\c textsize),
- *    celle du segment de données (\c datasize) et la première adresse libre de
- *    données (\c dataend) ;
- *
- *    - une suite de \c textsize entiers non signés représentant le contenu du
- *    segment de texte (les instructions) ;
- *
- *    - une suite de \c datasize entiers non signés représentant le contenu initial du
- *    segment de données.
- *
- * Tous les entiers font 32 bits et les adresses de chaque segment commencent à
- * 0. La fonction initialise complétement la machine.
- *
- * \param pmach la machine à simuler
- * \param programfile le nom du fichier binaire
- *
- */
-
 void read_program(Machine *pmach, const char *programfile){
   unsigned int textsize, datasize, dataend; 
   int opening= open(programfile,O_RDONLY);
 
-  //Verifications avant la lecture par rapport aux champs de pmach.
+  // Verifications avant la lecture par rapport aux champs de pmach.
   if(opening<0){
     fprintf(stderr, "Erreur lors de l'ouverture du fichier\n");
     exit(1);
   }
 
-
-  //Verification du nombre de bits lus pour textsize.
+  // Verification du nombre de bits lus pour textsize.
   read(opening, &textsize, sizeof(pmach->_textsize));
 
+  // Verification du nombre de bits lus pour datasize. 
+  read(opening, &datasize, sizeof(pmach->_datasize));  
 
-  //Verification du nombre de bits lus pour datasize. 
-  read(opening, &datasize, sizeof(pmach->_datasize));
-  
-
-  //Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
+  // Verification du nombre de bits lus pour dataend. Si ce nombre ne correspond pas au nombre de bits de dataend dans pmach alors on renvoie une erreur.
   read(opening, &dataend, sizeof(pmach->_dataend));//sizeof
   
-
-  //On lit les instructions:
-  Instruction *instruction=malloc(textsize * sizeof(Instruction));
+  // On lit les instructions:
+  Instruction *instruction = malloc(textsize * sizeof(Instruction));
   read(opening, instruction, textsize*sizeof(Instruction));
   
-  //On lit les données: 
+  // On lit les données: 
   Word *data = malloc(datasize * sizeof(Word));
   read(opening, data, datasize*sizeof(Word));
 
-  //On ferme le fichier et on verifie que la fermeture s'est bien deroulée.
+  // On ferme le fichier et on verifie que la fermeture s'est bien deroulée.
   int file_close=close(opening); 
-  if(file_close!=0){
+  if(file_close != 0){
     fprintf(stderr, "Erreur lors de la fermeture du fichier binaire\n");
     exit(1);
   }
   
-  //On charge ensuite le programme à l'intérieur de la machine
+  // On charge ensuite le programme à l'intérieur de la machine
   load_program(pmach, textsize,instruction,datasize,data,dataend); 
 }
 
-//! Affichage du programme et des données
-/*!
- * On affiche les instructions et les données en format hexadécimal, sous une
- * forme prête à être coupée-collée dans le simulateur.
- *
- * Pendant qu'on y est, on produit aussi un dump binaire dans le fichier
- * dump.prog. Le format de ce fichier est compatible avec l'option -b de
- * test_simul.
- Rappel
-- 3 entiers non signés, la taille du segment de texte (\c textsize),
-*    celle du segment de données (\c datasize) et la première adresse libre de
-*    données (\c dataend) ;
-*
-*    - une suite de \c textsize entiers non signés représentant le contenu du
-*    segment de texte (les instructions) ;
-*
-*    - une suite de \c datasize entiers non signés représentant le contenu initial du
-*    segment de données.
-*
-*
-*
-* \param pmach la machine en cours d'exécution
-*/
 void dump_memory(Machine *pmach){
   putchar('\n');
   
@@ -188,34 +127,6 @@ void dump_memory(Machine *pmach){
   
   printf("unsigned datasize = %d;\n", pmach->_datasize);
   printf("unsigned dataend = %d;\n", pmach->_dataend);
-  /*
-    for(int i = 0; i < pmach->_textsize; i++){
-    if(i%4 == 0){
-    putchar('\t');
-    }
-    write(file,&pmach->_text[i]._raw, sizeof(pmach->_text[0]));
-    printf("0x%08x, ", pmach->_text[i]._raw);
-    if(i%4 == 3){
-      putchar('\n');
-    }
-    printf("};\n");
-    printf("unsigned textsize = %d;\n", pmach->_textsize);
-    
-  }
-      
-  for(int i = 0 ; i < pmach->_datasize ; i++){
-    write(file,&pmach->_data[i],sizeof(Word));
-    printf("\t0x%08x, ", pmach->_data[i]);
-    if (i % 4 == 3){
-      putchar('\n');
-    }
-    if (pmach->_datasize % 4 != 0){
-      putchar('\n');
-    }
-    printf("};\n");
-    printf("unsigned datasize = %d;\n", pmach->_datasize);
-    printf("unsigned dataend = %d;\n", pmach->_dataend);
-    }*/
   int closing=close(file);
   if(closing!=0){
     printf("Erreur lors de la fermture du fichier binaire dump.bin\n");
@@ -251,14 +162,16 @@ void print_data(Machine *pmach){
   putchar('\n');
 }
 
-/*
-  Fonction put_cc. Cette fonction prend en parametre un code condition et renvoie la lettre correspondante.
-  Pour CC_U => U
-  Pour CC_Z => Z
-  Pour CC_P => P
-  Pour CC_N => N
- */
+/*!
+  * Fonction put_cc. Cette fonction prend en parametre un code condition et renvoie la lettre correspondante.
+  * Pour CC_U => U
+  * Pour CC_Z => Z
+  * Pour CC_P => P
+  * Pour CC_N => N
 
+  * \param cc Code condition
+  * \return La lettre correspondante
+ */
 char put_cc(Condition_Code cc){
   switch(cc){
   case CC_U: 
@@ -273,7 +186,10 @@ char put_cc(Condition_Code cc){
   return 'A'; 
 }
 
-/* Fonction print_registers. Cette fonction affiche tous les registres avec leur adresse et leur valeur.
+/*
+ * Fonction print_registers. Cette fonction affiche tous les registres avec leur adresse et leur valeur.
+ *
+ * \param pmach Machine dont il faut afficher les registres
  */
 void print_registers(Machine *pmach){
   for(int i = 0 ; i < NREGISTERS ; i++){
@@ -284,12 +200,6 @@ void print_registers(Machine *pmach){
   }
 }
 
-//! Affichage des registres du CPU
-/*!
- * Les registres généraux sont affichées en format hexadécimal et décimal.
- *
- * \param pmach la machine en cours d'exécution
- */
 void print_cpu(Machine *pmach){
   
   printf("\n*** CPU ***\n");
@@ -315,11 +225,10 @@ void simul(Machine *pmach, bool debug){
 
     trace("Execution",pmach,pmach->_text[pmach->_pc],pmach->_pc);
 
-    if(pmach->_pc<pmach->_textsize){
-      
+    if(pmach->_pc<pmach->_textsize){      
       stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1. Cette fonction renvoie faux lorsque l'instruction a decoder est HALT qui marque la fin.
       if(debug){
-	debug=debug_ask(pmach);////////////////////////////// A RAJOUTER//////////////
+	         debug=debug_ask(pmach);////////////////////////////// A RAJOUTER//////////////
       }
     }
     else{
