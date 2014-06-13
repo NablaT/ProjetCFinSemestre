@@ -25,14 +25,12 @@ void load_program(Machine *pmach,
   pmach->_text=text;// Mémoire pour les instructions
   //Ainsi que data
   pmach->_data=data; //Mémoire de données
+  //Initialisation de textsize, datasize et dataend
   pmach->_textsize = textsize;
-  //Initialisation de datasize et dataend
   pmach->_datasize=datasize; 
   pmach->_dataend=dataend; 
   //Init de SP ;
   pmach->_sp = datasize-1;
-
-
 }
 
 void read_program(Machine *pmach, const char *programfile){
@@ -91,7 +89,7 @@ void dump_memory(Machine *pmach){
 
   putchar('\n');
   printf("Instruction text[] = {\n");
-
+  //Boucle pour sauvegarder et afficher les instructions
   for(int i = 0; i < pmach->_textsize; i++){
 
     if(i%4 == 0){
@@ -99,7 +97,9 @@ void dump_memory(Machine *pmach){
       putchar('\t');
 
     }
+    //On écrit dans le fichier pour chaque itération
     write(file,&pmach->_text[i]._raw, sizeof(pmach->_text[0]));
+    //Puis on affiche
     printf("0x%08x, ", pmach->_text[i]._raw);
     if(i%4 == 3){
       putchar('\n');
@@ -112,8 +112,11 @@ void dump_memory(Machine *pmach){
   
   
   printf("Word data[] = {\n");
+  //Boucle pour sauvegarder et afficher les données. 
   for(int i = 0 ; i < pmach->_datasize ; i++){
+    //On écrit dans le fichier pour chaque itération
     write(file,&pmach->_data[i],sizeof(Word));
+    //Puis on affiche
     printf("\t0x%08x, ", pmach->_data[i]);
     if (i % 4 == 3){
       putchar('\n');
