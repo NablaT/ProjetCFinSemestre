@@ -297,10 +297,8 @@ void process_push(Machine *pmach, Instruction instr) {
  */
 void process_pop(Machine *pmach, Instruction instr) {
 	block_immediate(pmach, instr);
-	//printf("Processing POP :");
 	check_data_address(pmach, instr.instr_absolute._address);
 	pmach->_data[instr.instr_absolute._address] = pop_data(pmach);
-	printf("\n");
 }
 
 /*!
