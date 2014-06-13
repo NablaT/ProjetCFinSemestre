@@ -228,7 +228,7 @@ void simul(Machine *pmach, bool debug){
     if(pmach->_pc<pmach->_textsize){      
       stop=decode_execute(pmach, pmach->_text[pmach->_pc++]); //On decode et execute l'instruction suivante dont l'adresse est pc+1. Cette fonction renvoie faux lorsque l'instruction a decoder est HALT qui marque la fin.
       if(debug){
-	         debug=debug_ask(pmach);////////////////////////////// A RAJOUTER//////////////
+	         debug=debug_ask(pmach);
       }
     }
     else{
