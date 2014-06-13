@@ -30,28 +30,28 @@ void error(Error err, unsigned addr){
 	printf("ERROR: \n");
 	switch(err){
 		case ERR_NOERROR:
-			printf("Pas d'erreur au 0x\t%08x\n", addr);
+			printf("Pas d'erreur à l'adresse 0x%08x\n", addr);
 			break;
 		case ERR_UNKNOWN: //L'instruction n'est pas reconnue.
-			printf("Instruction inconnue au 0x\t%08x\n", addr);
+			printf("Instruction inconnue à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_ILLEGAL: //L'instruction est une opération illégale. 
-			printf("Instruction illégale au 0x\t%08x\n", addr);
+			printf("Instruction illégale à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_CONDITION://la code condition(CC) est illégale.
-			printf("Condition illégale au 0x\t%08x\n", addr);
+			printf("Condition illégale à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_IMMEDIATE://la valeur des indicateurs(I et X) est illégale.
-			printf("Valeur immédiate interdite au 0x\t%08x\n", addr);
+			printf("Valeur immédiate interdite à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_SEGTEXT://Si on fait beaucoup de execution. Les textes débordent la segment de text. 
-			printf("Violation de taille du segment de texte au 0x\t%08x\n", addr);
+			printf("Erreur de segmentation : Violation de taille du segment de texte à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_SEGDATA://Si on a beaucoup de données. La segment de données déborde dans la segment de pile.
-			printf("Violation de taille du segment de données au 0x\t%08x\n", addr);
+			printf("Erreur de segmentation : Violation de taille du segment de données à l'adresse 0x%08x\n", addr);
 			exit(1);
 		case ERR_SEGSTACK://Si on empile beaucoup. La segment de pile déborde dans la segment de donnée. 
-			printf("Violation de taille du segment de pile au 0x\t%08x\n", addr);
+			printf("Erreur de segmentation : Violation de taille du segment de pile à l'adresse 0x%08x\n", addr);
 			exit(1);
 		default:
 			exit(0);
